@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useSpeech } from "@/hooks/useSpeech";
 import { 
   Cloud, 
   Sun, 
@@ -31,6 +32,16 @@ interface DashboardProps {
 
 export default function Dashboard({ onNavigate, userLanguage }: DashboardProps) {
   const [currentTime] = useState(new Date());
+  const { speak } = useSpeech();
+
+  // Auto-narrate dashboard on load
+  useEffect(() => {
+    const welcomeMsg = userLanguage === 'hi' ? 
+      "डैशबोर्ड में आपका स्वागत है। आज का मौसम आंशिक बादल छाए हुए हैं और तापमान 28 डिग्री है। फसल की सलाह उपलब्ध है।" : 
+      "Welcome to your dashboard. Today's weather is partly cloudy with 28 degrees temperature. Crop advisory is available.";
+    
+    setTimeout(() => speak(welcomeMsg, { lang: userLanguage === 'hi' ? 'hi-IN' : 'en-US' }), 1000);
+  }, [userLanguage, speak]);
 
   const weatherData = {
     current: {
@@ -130,7 +141,13 @@ export default function Dashboard({ onNavigate, userLanguage }: DashboardProps) 
         </Card>
 
         {/* Weather Card */}
-        <Card className="farmer-card hover-float" onClick={() => onNavigate('weather')}>
+        <Card className="farmer-card hover-float" onClick={() => {
+          const weatherMsg = userLanguage === 'hi' ? 
+            `मौसम का पूरा विवरण: आज तापमान ${weatherData.current.temp} डिग्री है, आंशिक बदली है।` : 
+            `Weather details: Today's temperature is ${weatherData.current.temp} degrees with ${weatherData.current.condition.toLowerCase()}.`;
+          speak(weatherMsg, { lang: userLanguage === 'hi' ? 'hi-IN' : 'en-US' });
+          onNavigate('weather');
+        }}>
           <CardHeader className="pb-3">
             <CardTitle className="farmer-text-xl text-primary flex items-center">
               <weatherData.current.icon className="w-6 h-6 mr-2" />

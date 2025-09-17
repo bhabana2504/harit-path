@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowRight, Globe, Mic, User, MapPin } from "lucide-react";
+import { ArrowRight, Globe, Mic, User, MapPin, Volume2 } from "lucide-react";
+import { useSpeech } from "@/hooks/useSpeech";
 import farmerWelcome from "@/assets/farmer-welcome.jpg";
 
 interface OnboardingScreenProps {
@@ -34,6 +35,30 @@ const languages = [
 export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const [step, setStep] = useState(1);
   const [data, setData] = useState<Partial<OnboardingData>>({});
+  const { speak } = useSpeech();
+
+  // Auto-narrate screen content when step changes
+  useEffect(() => {
+    const narrationTexts = {
+      1: data.language === 'hi' ? 
+        "स्वागत है! कृषि सलाहकार में आपका स्वागत है। कृपया अपनी भाषा चुनें।" : 
+        "Welcome to Smart Crop Advisory! Please select your language.",
+      2: data.language === 'hi' ? 
+        "आवाज़ सहायक को सक्षम करें या छोड़ें।" : 
+        "Enable voice assistant or skip.",
+      3: data.language === 'hi' ? 
+        "अपनी खेती की जानकारी भरें।" : 
+        "Fill in your farming details.",
+      4: data.language === 'hi' ? 
+        "अपना स्थान साझा करें।" : 
+        "Share your location."
+    };
+    
+    const text = narrationTexts[step as keyof typeof narrationTexts];
+    if (text && data.preferVoice !== false) {
+      setTimeout(() => speak(text, { lang: data.language === 'hi' ? 'hi-IN' : 'en-US' }), 500);
+    }
+  }, [step, data.language, data.preferVoice, speak]);
 
   const handleNext = () => {
     if (step < 4) {
@@ -84,11 +109,29 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
             </p>
             
             <div className="space-y-4">
-              <Label className="farmer-text-xl text-primary">
-                <Globe className="inline mr-2" />
-                भाषा चुनें / Select Language
-              </Label>
-              <Select onValueChange={(value) => updateData('language', value)}>
+              <div className="flex items-center justify-between">
+                <Label className="farmer-text-xl text-primary">
+                  <Globe className="inline mr-2" />
+                  भाषा चुनें / Select Language
+                </Label>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => speak("Please select your language. कृपया अपनी भाषा चुनें।", { lang: 'hi-IN' })}
+                  className="text-primary"
+                >
+                  <Volume2 className="w-5 h-5" />
+                </Button>
+              </div>
+              <Select onValueChange={(value) => {
+                updateData('language', value);
+                const selectedLang = languages.find(l => l.code === value);
+                if (selectedLang && value === 'hi') {
+                  speak("हिंदी भाषा चुनी गई है।", { lang: 'hi-IN' });
+                } else if (selectedLang) {
+                  speak("Language selected.", { lang: 'en-US' });
+                }
+              }}>
                 <SelectTrigger className="w-full text-lg h-14">
                   <SelectValue placeholder="Choose your language / अपनी भाषा चुनें" />
                 </SelectTrigger>

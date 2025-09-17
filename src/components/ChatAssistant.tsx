@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useSpeech } from "@/hooks/useSpeech";
+import VoiceButton from "@/components/VoiceButton";
 import { 
   ArrowLeft, 
   Mic,
@@ -46,6 +48,16 @@ export default function ChatAssistant({ onBack, userLanguage }: ChatAssistantPro
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { speak } = useSpeech();
+
+  // Auto-speak welcome message
+  useEffect(() => {
+    if (audioEnabled && messages.length === 1) {
+      setTimeout(() => {
+        speak(messages[0].content, { lang: userLanguage === 'hi' ? 'hi-IN' : 'en-US' });
+      }, 1000);
+    }
+  }, [audioEnabled, userLanguage, speak, messages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -81,9 +93,11 @@ export default function ChatAssistant({ onBack, userLanguage }: ChatAssistantPro
       setMessages(prev => [...prev, botResponse]);
       setIsTyping(false);
       
-      // Text-to-speech simulation
+      // Text-to-speech for bot response
       if (audioEnabled) {
-        speakMessage(botResponse.content, userLanguage);
+        setTimeout(() => {
+          speak(botResponse.content, { lang: userLanguage === 'hi' ? 'hi-IN' : 'en-US' });
+        }, 100);
       }
     }, 1500);
   };
